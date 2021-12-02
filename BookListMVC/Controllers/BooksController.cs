@@ -11,14 +11,13 @@ namespace BookListMVC.Controllers
     public class BooksController : Controller
     {
         private readonly ApplicationDbContext _db;
-
         [BindProperty]
         public Book Book { get; set; }
-
         public BooksController(ApplicationDbContext db)
         {
             _db = db;
         }
+
         public IActionResult Index()
         {
             return View();
@@ -41,8 +40,28 @@ namespace BookListMVC.Controllers
             return View(Book);
         }
 
-        // Region for API Calls
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public IActionResult Upsert()
+        {
+            if (ModelState.IsValid)
+            {
+                if (Book.Id == 0)
+                {
+                    //create
+                    _db.Books.Add(Book);
+                }
+                else
+                {
+                    _db.Books.Update(Book);
+                }
+                _db.SaveChanges();
+                return RedirectToAction("Index");
+            }
+            return View(Book);
+        }
 
+        #region API Calls
         [HttpGet]
         public async Task<IActionResult> GetAll()
         {
@@ -61,8 +80,6 @@ namespace BookListMVC.Controllers
             await _db.SaveChangesAsync();
             return Json(new { success = true, message = "Delete successful" });
         }
-
-        //End Region
-
+        #endregion
     }
 }
